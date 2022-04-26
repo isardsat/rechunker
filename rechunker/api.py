@@ -146,15 +146,19 @@ def _encode_zarr_attributes(attrs):
     return {k: encode_zarr_attr_value(v) for k, v in attrs.items()}
 
 
-def _zarr_empty(shape, store_or_group, chunks, dtype, name=None, **kwargs):
+def _zarr_empty(shape, store_or_group, chunks, dtype, name=None, **kwargs0):
+    kwargs = kwargs0.copy()
+    if not ("fill_value" in kwargs) and "_FillValue" in kwargs:
+        kwargs["fill_value"] = kwargs["_FillValue"]
+        del kwargs["_FillValue"]
     # wrapper that maybe creates the array within a group
     if name is not None:
         assert isinstance(store_or_group, zarr.hierarchy.Group)
-        return store_or_group.empty(
+        return store_or_group.create(
             name, shape=shape, chunks=chunks, dtype=dtype, **kwargs
         )
     else:
-        return zarr.empty(
+        return zarr.create(
             shape, chunks=chunks, dtype=dtype, store=store_or_group, **kwargs
         )
 
@@ -166,6 +170,8 @@ ZARR_OPTIONS = [
     "cache_metadata",
     "cache_attrs",
     "overwrite",
+    "_FillValue",
+    "write_empty_chunks",
 ]
 
 
